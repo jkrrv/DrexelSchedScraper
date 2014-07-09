@@ -1,0 +1,6 @@
+[submodule "libs/aCurl"]
+	path = libs/aCurl
+	url = https://github.com/jkrrv/aCurl.git
+[submodule "libs/php-dom-parser"]
+	path = libs/php-dom-parser
+	url = https://github.com/jkrrv/php-dom-parser.git
