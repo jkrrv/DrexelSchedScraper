@@ -11,16 +11,18 @@
 
 
     <?php
-    include_once "libs/curl-class.php";
-    include_once "libs/simple-html-dom.php";
+    include_once "libs/aCurl/aCurl.php";
+    include_once "libs/php-dom-parser/php-dom-parser.php";
 
 
     $infoPoints=array();
 
+    $sectionCount=0;
+
 
     /* GET TERM LIST */
 
-    set_time_limit(2);
+    set_time_limit(300);
     $c1 = new aCurl($baseUrl . "/webtms_du/app");
     $c1->setCookieFile($TASK['cookie']);
     $c1->includeHeader(true);
@@ -85,6 +87,8 @@
 
                     //echo "<h5>" . $sectName . "</h5>"; //CRN
 
+                    $sectionCount++;
+
                     /* GET SECTION INFORMATION */
                     $c5 = new aCurl($sectHref);
                     $c5->setCookieFile($TASK['cookie']);
@@ -98,13 +102,17 @@
                     //echo $sectInfo;
 
                     foreach($sectInfo->find('tr') as $sectInfoPoint) {
-                        if ($sectInfoPoint->find('td', 1)->innertext!="") {
-                            $sectInfoPoints[] = $sectInfoPoint->find('td', 0)->innertext;
-                            $sectInfoPoints = array_unique($sectInfoPoints);
+                        if ($sectInfoContent = $sectInfoPoint->find('td', 1)) {
+                            if ($sectInfoContent->innertext != "") {
+                                $sectInfoPoints[] = $sectInfoPoint->find('td', 0)->innertext;
+                                $sectInfoPoints = array_unique($sectInfoPoints);
+                            }
                         }
                     }
                 }
                 var_dump($sectInfoPoints);
+
+                echo "<p>".$sectionCount."</p>";
             }
         }
     }
@@ -121,7 +129,7 @@
     $c = "";
     set_time_limit(30);
     $c = new aCurl("https://drexel.collegiatelink.net/organization/drexelforchrist/roster/prospective");
-    $c->setCookieFile($TASK[cookie]);
+    $c->setCookieFile($TASK['cookie']);
     $c->includeHeader(true);
     $c->maxRedirects(3);
     $c->createCurl();
