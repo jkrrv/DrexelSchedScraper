@@ -11,6 +11,12 @@
 
 
     <?php
+
+
+
+
+
+
     include_once "libs/aCurl/aCurl.php";
     include_once "libs/php-dom-parser/php-dom-parser.php";
 
@@ -22,7 +28,7 @@
 
     /* GET TERM LIST */
 
-    set_time_limit(300);
+    set_time_limit(30);
     $c1 = new aCurl($baseUrl . "/webtms_du/app");
     $c1->setCookieFile($TASK['cookie']);
     $c1->includeHeader(true);
@@ -104,16 +110,17 @@
                     foreach($sectInfo->find('tr') as $sectInfoPoint) {
                         if ($sectInfoContent = $sectInfoPoint->find('td', 1)) {
                             if ($sectInfoContent->innertext != "") {
-                                $sectInfoPoints[] = $sectInfoPoint->find('td', 0)->innertext;
+                                $sectInfoPoints[$sectInfoPoint->find('td', 0)->innertext] = $sectInfoPoint->find('td', 1)->innertext;
                                 $sectInfoPoints = array_unique($sectInfoPoints);
                             }
                         }
                     }
+		var_dump($sectInfoPoints);
                 }
-                var_dump($sectInfoPoints);
+                
 
                 echo "<p>".$sectionCount."</p>";
-            }
+            } 
         }
     }
 
