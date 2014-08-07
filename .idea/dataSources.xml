@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" hash="1045462268">
+    <data-source source="LOCAL" name="SQLite-drexelClasses" uuid="e285cb98-76cb-4976-9646-d2121fba2322">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/db.slite3</jdbc-url>
+      <libraries />
+    </data-source>
+  </component>
+</project>
+

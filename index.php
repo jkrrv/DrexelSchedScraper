@@ -7,6 +7,8 @@
     $TASK['cookie']="schedscrape.cky";
     $baseUrl = "https://duapp2.drexel.edu";
 
+	$db = new sqlite3('db.slite3');
+
     ?>
 
 
@@ -28,7 +30,7 @@
 
     /* GET TERM LIST */
 
-    set_time_limit(30);
+    set_time_limit(5);
     $c1 = new aCurl($baseUrl . "/webtms_du/app");
     $c1->setCookieFile($TASK['cookie']);
     $c1->includeHeader(true);
@@ -39,11 +41,29 @@
     $termList = $h1->find('table[class=termPanel]', 0);
 
     foreach($termList->find('a') as $term) {
-
+		$termID = 0;
         $termHref = str_ireplace("&amp;", "&",$baseUrl . $term->href);
         $termName = $term->innertext;
 
-        echo "<h2>" . $termName . "</h2>";
+		/* create entry in terms table */
+		$q = "INSERT OR IGNORE INTO terms (name) VALUES ('$termName')";
+		$db->exec($q);
+		$q = "SELECT rowID FROM terms WHERE terms.name = '$termName'";
+		$termID = $db->querySingle($q);
+
+		/* create sections table for the term, if needed */
+		$q = "CREATE TABLE IF NOT EXISTS 'sections-$termID' (
+			crn INT NOT NULL UNIQUE PRIMARY KEY,
+			collID INT,
+			deptID INT,
+			courseNum INT,
+			sectTypeID INT,
+			sectNum TEXT
+		)";
+		$db->exec($q);
+
+
+        echo "<h2>$termName ($termID)</h2>";
 
         /* GET COLLEGE LIST */
         $c2 = new aCurl($termHref);
@@ -56,10 +76,16 @@
         $collList = $h2->find('div[id=sideLeft]', 0);
 
         foreach($collList->find('a') as $coll) {
+			$collID = 0;
             $collHref = str_ireplace("&amp;", "&",$baseUrl . $coll->href);
             $collName = $coll->innertext;
 
-            echo "<h3>" . $collName . "</h3>";
+			$q = "INSERT OR IGNORE INTO colleges (name) VALUES ('$collName')";
+			$db->exec($q);
+			$q = "SELECT rowID FROM colleges WHERE colleges.name = '$collName'";
+			$collID = $db->querySingle($q);
+
+            echo "<h3>$collName ($collID)</h3>";
 
             /* GET DEPARTMENT LIST */
             $c3 = new aCurl($collHref);
@@ -72,10 +98,20 @@
             $deptList = $h3->find('table[class=collegePanel]', 0);
 
             foreach($deptList->find('a') as $dept) {
+				$deptID = 0;
                 $deptHref = str_ireplace("&amp;", "&",$baseUrl . $dept->href);
-                $deptName = $dept->innertext;
+				$deptSym = explode("&sp=",$deptHref);
+				$deptSym = $db->escapeString(substr($deptSym[3],1));
 
-                echo "<h4>" . $deptName . "</h4>";
+				$deptName = $dept->innertext;
+                $deptNameDB = $db->escapeString($deptName);
+
+				$q = "INSERT OR IGNORE INTO departments ('sym','name') VALUES ('$deptSym','$deptNameDB')";
+				$db->exec($q);
+				$q = "SELECT rowID FROM departments WHERE departments.sym = '$deptSym'";
+				$deptID = $db->querySingle($q);
+
+                echo "<h4>$deptName ($deptSym $deptID)</h4>";
 
                 /* GET SECTION LIST */
                 $c4 = new aCurl($deptHref);
@@ -87,40 +123,100 @@
                 $h4 = new simple_html_dom((string)$c4);
                 $sectList = $h4->find('table[bgcolor=#cccccc]', 0);
 
+				//echo $sectList;
+
+				foreach($sectList->children() as $sect) {
+
+					echo "\n"; //keeps the source almost-readable.
+
+					if ($sect->class=="tableHeader") {
+						continue;
+					}
+
+					if ($sect->bgcolor=="#63659C") {
+						continue;
+					}
+
+					$sectTds=$sect->children();
+
+					$sectCourseNum   = $sectTds[1]->innertext;
+					$sectInstrType   = $sectTds[2]->innertext;
+					//$sectInstrMeth   = $sectTds[4]->innertext;
+					$sectNum 		 = $sectTds[5]->innertext;
+					$sectHref		 = str_ireplace("&amp;", "&",$baseUrl . $sect->find('a',0)->href);
+					$sectFullStatus  = $sect->find('p',0)->title;
+					$sectTitle 		 = $sectTds[7]->innertext;
+
+
+					echo "c#   $sectCourseNum <br/>\n";
+					echo "type $sectInstrType <br/>\n";
+					//echo "meth $sectInstrMeth <br/>\n";
+					echo "s#   $sectNum <br/>\n";
+					echo "href $sectHref <br/>\n";
+					echo "full $sectFullStatus <br/>\n";
+					echo "tit  $sectTitle <br/>\n";
+
+					echo "<p>-----------------------------</p>\n";
+
+
+					continue;
+
+					$sectCourseNum   = $sect->first_child()->innertext;
+					$sectInstrType   = $sect->find('td',2)->innertext;
+					$sectInstrMeth   = $sect->find('td',3)->innertext;
+					$sectNum 		 = $sect->find('td',4)->innertext;
+					$sectLink		 = $sect->find('a',1);
+					$sectCRN 		 = $sectLink->innertext;
+					$sectFullStatus  = $sectLink->title;
+
+					echo "#" . $sectCourseNum . "<br/ >";
+					echo "#" . $sectInstrType . "<br/ >";
+					echo "#" . $sectInstrMeth . "<br/ >";
+					echo "#" . $sectNum . "<br/ >";
+					echo "#" . $sectLink . "<br/ >";
+					echo "#" . $sectCRN . "<br/ >";
+					echo "#" . $sectFullStatus . "<br/ >";
+				}
+
+continue;
+
                 foreach($sectList->find('a') as $sect) {
                     $sectHref = str_ireplace("&amp;", "&",$baseUrl . $sect->href);
-                    $sectName = $sect->innertext; //CRN
+                    $sectCRN = $sect->innertext; //CRN
+
+					$q = "INSERT OR IGNORE INTO 'sections-$termID' ('crn','collID','deptID') VALUES ('$sectCRN','$collID','$deptID')";
+					$db->exec($q);
 
                     //echo "<h5>" . $sectName . "</h5>"; //CRN
 
                     $sectionCount++;
 
                     /* GET SECTION INFORMATION */
-                    $c5 = new aCurl($sectHref);
-                    $c5->setCookieFile($TASK['cookie']);
-                    $c5->includeHeader(true);
-                    $c5->maxRedirects(3);
-                    $c5->createCurl();
-
-                    $h5 = new simple_html_dom((string)$c5);
-                    $sectInfo = $h5->find('table[bgcolor=#cccccc]', 0);
-
-                    //echo $sectInfo;
-
-                    foreach($sectInfo->find('tr') as $sectInfoPoint) {
-                        if ($sectInfoContent = $sectInfoPoint->find('td', 1)) {
-                            if ($sectInfoContent->innertext != "") {
-                                $sectInfoPoints[$sectInfoPoint->find('td', 0)->innertext] = $sectInfoPoint->find('td', 1)->innertext;
-                                $sectInfoPoints = array_unique($sectInfoPoints);
-                            }
-                        }
-                    }
-		var_dump($sectInfoPoints);
+//                    $c5 = new aCurl($sectHref);
+//                    $c5->setCookieFile($TASK['cookie']);
+//                    $c5->includeHeader(true);
+//                    $c5->maxRedirects(3);
+//                    $c5->createCurl();
+//
+//                    $h5 = new simple_html_dom((string)$c5);
+//                    $sectInfo = $h5->find('table[bgcolor=#cccccc]', 0);
+//
+//                    //echo $sectInfo;
+//
+//                    foreach($sectInfo->find('tr') as $sectInfoPoint) {
+//                        if ($sectInfoContent = $sectInfoPoint->find('td', 1)) {
+//                            if ($sectInfoContent->innertext != "") {
+//                                $sectInfoPoints[$sectInfoPoint->find('td', 0)->innertext] = $sectInfoPoint->find('td', 1)->innertext;
+//                                $sectInfoPoints = array_unique($sectInfoPoints);
+//                            }
+//                        }
+//                    }
+//		var_dump($sectInfoPoints);
                 }
-                
+
 
                 echo "<p>".$sectionCount."</p>";
-            } 
+            }
         }
     }
 
