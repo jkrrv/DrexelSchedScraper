@@ -13,7 +13,7 @@
 
 	$db = new sqlite3('db.slite3');
 
-
+/* The following is the DDL that builds the database.  KURTZ update DDL as needed. */
 	$dbDDL = "
 	CREATE TABLE colleges
 (
@@ -24,18 +24,7 @@ CREATE TABLE departments
     sym TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL
 );
-CREATE TABLE sections
-(
-    id INTEGER PRIMARY KEY NOT NULL,
-    CRN INTEGER NOT NULL,
-    termID INTEGER NOT NULL,
-    collegeID INTEGER NOT NULL,
-    deptID INTEGER NOT NULL,
-    courseNum INTEGER NOT NULL,
-    sectTypeID INTEGER NOT NULL,
-    sectNum TEXT NOT NULL,
-    url TEXT NOT NULL
-);
+
 
 CREATE TABLE terms
 (
@@ -69,7 +58,7 @@ CREATE TABLE terms
 
     /* GET TERM LIST */
 
-    set_time_limit(5);
+    set_time_limit(60);
     $c1 = new aCurl($baseUrl . "/webtms_du/app");
     $c1->setCookieFile($TASK['cookie']);
     $c1->includeHeader(true);
@@ -151,6 +140,7 @@ CREATE TABLE terms
 				$deptID = $db->querySingle($q);
 
                 echo "<h4>$deptName ($deptSym $deptID)</h4>";
+continue; // KURTZ make everything below this point a separate request
 
                 /* GET SECTION LIST */
                 $c4 = new aCurl($deptHref);
