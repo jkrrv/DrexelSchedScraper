@@ -4,10 +4,49 @@
 
     <?php
 
+
+
     $TASK['cookie']="schedscrape.cky";
     $baseUrl = "https://duapp2.drexel.edu";
 
+	unlink("db.slite3");
+
 	$db = new sqlite3('db.slite3');
+
+
+	$dbDDL = "
+	CREATE TABLE colleges
+(
+    name TEXT NOT NULL
+);
+CREATE TABLE departments
+(
+    sym TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
+);
+CREATE TABLE sections
+(
+    id INTEGER PRIMARY KEY NOT NULL,
+    CRN INTEGER NOT NULL,
+    termID INTEGER NOT NULL,
+    collegeID INTEGER NOT NULL,
+    deptID INTEGER NOT NULL,
+    courseNum INTEGER NOT NULL,
+    sectTypeID INTEGER NOT NULL,
+    sectNum TEXT NOT NULL,
+    url TEXT NOT NULL
+);
+
+CREATE TABLE terms
+(
+    name TEXT NOT NULL
+);
+
+
+
+	";
+
+	$db->exec($dbDDL);
 
     ?>
 
