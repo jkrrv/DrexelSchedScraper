@@ -4,7 +4,7 @@
 
     <?php
 
-
+    error_reporting(E_ALL);
 
     $TASK['cookie']="schedscrape.cky";
     $baseUrl = "https://duapp2.drexel.edu";
