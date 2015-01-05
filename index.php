@@ -140,8 +140,10 @@ CREATE TABLE terms
 				$deptID = $db->querySingle($q);
 
                 echo "<h4>$deptName ($deptSym $deptID)</h4>";
-continue; // KURTZ make everything below this point a separate request
 
+if (!stristr($deptSym, "ECE")) {
+	continue; // KURTZ make everything below this point a separate request
+}
                 /* GET SECTION LIST */
                 $c4 = new aCurl($deptHref);
                 $c4->setCookieFile($TASK['cookie']);
@@ -181,7 +183,7 @@ continue; // KURTZ make everything below this point a separate request
 					echo "type $sectInstrType <br/>\n";
 					//echo "meth $sectInstrMeth <br/>\n";
 					echo "s#   $sectNum <br/>\n";
-					echo "href $sectHref <br/>\n";
+					//echo "href $sectHref <br/>\n";
 					echo "full $sectFullStatus <br/>\n";
 					echo "tit  $sectTitle <br/>\n";
 
@@ -207,7 +209,7 @@ continue; // KURTZ make everything below this point a separate request
 					echo "#" . $sectFullStatus . "<br/ >";
 				}
 
-continue;
+				continue;
 
                 foreach($sectList->find('a') as $sect) {
                     $sectHref = str_ireplace("&amp;", "&",$baseUrl . $sect->href);
